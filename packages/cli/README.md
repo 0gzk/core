@@ -1,6 +1,6 @@
 # @0gzk/cli
 
-Command-line tool for the [0gzk](https://github.com/0gzk/0gzk) ZK Proof-as-a-Service platform on 0G Storage. Publish a circuit bundle to 0G, fetch it back by root hash, and generate Groth16 proofs locally — witness data never leaves your machine.
+Command-line tool for the [0gzk](https://github.com/0gzk/core) ZK Proof-as-a-Service platform on 0G Storage. Publish a circuit bundle to 0G, fetch it back by root hash, and generate Groth16 proofs locally — witness data never leaves your machine.
 
 ## Install
 

@@ -86,9 +86,9 @@ This is a `pnpm` workspaces monorepo:
 | --------------------- | -------------------------------------------------------------------------------------- |
 | `packages/sdk/`       | [`@0gzk/sdk`](./packages/sdk) — isomorphic prover + Node-only 0G Storage helpers       |
 | `packages/cli/`       | [`@0gzk/cli`](./packages/cli) — the `0gzk` binary                                      |
-| `packages/web/`       | Next.js 14 app for in-browser proving (planned)                                        |
 | `packages/contracts/` | Foundry project for the on-chain circuit registry + Groth16 verifiers (planned)        |
 | `circuits/`           | Source circuits (e.g. `age_verification`) and their `build.sh` scripts                 |
+| `web/`                | [Next.js 16 web prover](./web) — separate git repo, consumes `@0gzk/sdk` from npm      |
 
 ## Develop from source
 

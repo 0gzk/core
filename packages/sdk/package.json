@@ -1,6 +1,6 @@
 {
   "name": "@0gzk/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "0gzk SDK: ZK Groth16 prover and 0G Storage helpers (isomorphic + Node)",
   "type": "module",
   "main": "./dist/index.js",
@@ -37,11 +37,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/0gzk/0gzk.git",
+    "url": "git+https://github.com/0gzk/core.git",
     "directory": "packages/sdk"
   },
-  "homepage": "https://github.com/0gzk/0gzk#readme",
-  "bugs": "https://github.com/0gzk/0gzk/issues",
+  "homepage": "https://github.com/0gzk/core#readme",
+  "bugs": "https://github.com/0gzk/core/issues",
   "license": "MIT",
   "author": "0gzk",
   "keywords": [

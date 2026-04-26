@@ -1,6 +1,6 @@
 # @0gzk/sdk
 
-ZK Groth16 prover and 0G Storage helpers for the [0gzk](https://github.com/0gzk/0gzk) ZK Proof-as-a-Service platform. Two surfaces:
+ZK Groth16 prover and 0G Storage helpers for the [0gzk](https://github.com/0gzk/core) ZK Proof-as-a-Service platform. Two surfaces:
 
 - **`@0gzk/sdk`** — isomorphic (Node + browser): `generateProof`, `verifyLocal`, `validateInputs`, and circuit/bundle types. Wraps `snarkjs.groth16` with input validation against the bundle's `metadata.json`.
 - **`@0gzk/sdk/node`** — Node-only: `uploadBundle` and `fetchBundle` for 0G Storage round-trips, plus `loadConfig`/`readBundleFromDir` helpers.

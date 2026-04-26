@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "noEmit": true,
-    "composite": false
-  },
-  "include": [],
-  "exclude": ["node_modules", ".next", "dist"]
-}
