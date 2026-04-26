@@ -1,0 +1,15 @@
+{
+  "name": "@0gzk/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Foundry project for the 0gzk circuit registry and Groth16 verifiers (placeholder)",
+  "scripts": {
+    "build": "echo \"[contracts] placeholder build (forge build wired up later)\"",
+    "dev": "echo \"[contracts] placeholder dev\"",
+    "clean": "rimraf out cache broadcast",
+    "lint": "echo \"[contracts] no lint yet\""
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1"
+  }
+}

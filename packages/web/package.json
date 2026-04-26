@@ -1,0 +1,15 @@
+{
+  "name": "@0gzk/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Next.js UI for 0gzk (placeholder; real scaffold lands in step 6)",
+  "scripts": {
+    "build": "echo \"[web] placeholder build (Next.js scaffold pending)\"",
+    "dev": "echo \"[web] placeholder dev (Next.js scaffold pending)\"",
+    "clean": "rimraf .next dist",
+    "lint": "echo \"[web] no lint yet\""
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1"
+  }
+}
