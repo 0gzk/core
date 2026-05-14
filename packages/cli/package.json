@@ -1,6 +1,6 @@
 {
   "name": "@0gzk/cli",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "0gzk CLI: publish circuit bundles to 0G Storage, fetch them back, and prove locally",
   "type": "module",
   "bin": {
@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@0gfoundation/0g-ts-sdk": "^1.2.4",
-    "@0gzk/sdk": "^0.3.0",
+    "@0gzk/sdk": "^0.3.1",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",
