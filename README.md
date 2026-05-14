@@ -21,10 +21,11 @@ flowchart LR
   Proof -.->|"optional"| Verifier["verifier.sol on-chain"]
 ```
 
-Two SDK surfaces, picked automatically by your runtime:
+Three SDK surfaces, picked automatically by your runtime:
 
 - **`@0gzk/sdk`** (isomorphic) — `generateProof`, `verifyLocal`, `validateInputs`. Works in Node and in the browser. Wraps `snarkjs.groth16` with metadata-driven input validation.
-- **`@0gzk/sdk/node`** (Node-only subpath) — `uploadBundle`, `fetchBundle`, `loadConfig`, `readBundleFromDir`. Talks to 0G Storage via `@0gfoundation/0g-ts-sdk`.
+- **`@0gzk/sdk/node`** (Node-only) — `uploadBundle`, `fetchBundle`, `loadConfig`, `readBundleFromDir`. Talks to 0G Storage via `@0gfoundation/0g-ts-sdk`.
+- **`@0gzk/sdk/onchain`** (isomorphic) — `getRegistryContract`, `getVersion`, `listCircuits`, `resolveBundle`. Resolves `name@version` to a bundle through the on-chain [`CircuitRegistry`](./packages/contracts/src/CircuitRegistry.sol).
 
 ## Install
 
@@ -58,37 +59,90 @@ In Node you can pull the bundle off 0G Storage instead of constructing one by ha
 ```ts
 import { fetchBundle, loadConfig } from "@0gzk/sdk/node";
 
-const config = loadConfig();
+const config = loadConfig({});
 const bundle = await fetchBundle(rootHash, config, "/tmp/my-bundle");
 ```
+
+Or skip "what's the rootHash?" entirely and resolve circuits by name from the on-chain registry:
+
+```ts
+import { JsonRpcProvider } from "ethers";
+import { getRegistryContract, resolveBundle, parseNameSpec } from "@0gzk/sdk/onchain";
+import { fetchBundle, loadConfig } from "@0gzk/sdk/node";
+
+const registry = getRegistryContract(new JsonRpcProvider("https://evmrpc.0g.ai"));
+const { record, bundle } = await resolveBundle(
+  registry,
+  parseNameSpec("age_verification@0.1.0"),
+  (root) => fetchBundle(root, loadConfig({}), `/tmp/0gzk/${root}`),
+);
+```
+
+Browser, Next.js App Router, registry-driven proving, and CI recipes are all in [`packages/sdk/USAGE.md`](./packages/sdk/USAGE.md).
 
 ## Use the CLI
 
 ```bash
-# Publish a circuit bundle to 0G Storage (needs OG_PRIVATE_KEY funded on Galileo testnet)
+# Publish a circuit bundle to 0G Storage (needs OG_PRIVATE_KEY funded on 0G mainnet)
 0gzk publish ./circuit_bundle
 
-# Fetch a bundle by root hash
-0gzk fetch 0x5aa4e2... /tmp/0gzk-fetched
+# Publish AND register on-chain in one step
+0gzk publish ./circuit_bundle --register
 
-# Generate a proof locally - bundle source is exclusive: --bundle dir/ or --root-hash 0x...
-0gzk prove --bundle ./circuit_bundle ./input.json
-0gzk prove --root-hash 0x5aa4e2...   ./input.json
+# Finalization on 0G Storage can take a few minutes. Set a wall-clock budget
+# (default 5m). The rootHash is printed the moment it's known, so if the wait
+# is exceeded the upload tx is still on chain and you can recover.
+0gzk publish ./circuit_bundle --wait 30m
+0gzk publish ./circuit_bundle --no-wait --register   # return as soon as rootHash is known
+
+# Recovery path: register an already-uploaded rootHash without re-uploading.
+0gzk registry register 0xabc... --bundle ./circuit_bundle
+
+# Browse registered circuits
+0gzk registry list
+0gzk registry get age_verification
+
+# Fetch a bundle by root hash, or by name
+0gzk fetch 0x5aa4e2... /tmp/0gzk-fetched
+0gzk registry resolve age_verification@0.1.0 /tmp/age
+
+# Generate a proof locally - bundle source is exclusive: --bundle, --root-hash, or --name
+0gzk prove --bundle    ./circuit_bundle           ./input.json
+0gzk prove --root-hash 0x5aa4e2...                ./input.json
+0gzk prove --name      age_verification@0.1.0     ./input.json
 ```
 
 `0gzk prove` writes `proof.json`, `public.json`, and a roll-up `result.json` into `./proof-<timestamp>/`. Outputs are byte-compatible with the canonical `snarkjs` CLI — anyone can verify them with `snarkjs groth16 verify`. Bundles fetched by root hash are cached at `~/.0gzk/bundles/<rootHash>/` for instant reuse (override with `OGZK_CACHE_DIR`).
+
+## Examples
+
+The [`examples/`](./examples) folder ships five standalone reference projects, each installing `@0gzk/sdk` from npm and each documenting a single surface of 0gzk in around 30 - 100 LOC. Pick the one that matches what you're trying to do:
+
+| Example | Audience | What it shows |
+| --- | --- | --- |
+| [`01-prove-in-node`](./examples/01-prove-in-node) | Node prover | Resolve by name → fetch from 0G Storage → prove → verify, all in one short script. |
+| [`02-prove-in-browser`](./examples/02-prove-in-browser) | Browser prover | Vite + vanilla TS. Gunzip + untar in the tab, snarkjs in WASM, witness never leaves the device. |
+| [`03-verify-on-chain`](./examples/03-verify-on-chain) | Solidity consumer | Foundry project: hermetic `forge test` + a `SubmitProof.s.sol` recipe for the live path. |
+| [`04-resolve-by-name`](./examples/04-resolve-by-name) | Integrator | 25-line "phone book": print every field of a registry record. |
+| [`05-publish-your-own`](./examples/05-publish-your-own) | Circuit author | `private_multiply.circom` + self-contained `build.sh` + a prose walkthrough to a registry entry. |
+
+```bash
+cd examples/01-prove-in-node
+pnpm install --frozen-lockfile --ignore-workspace
+pnpm smoke           # node prove.mjs age_verification 1990
+```
 
 ## Repository layout
 
 This is a `pnpm` workspaces monorepo:
 
-| Path                  | What                                                                                   |
-| --------------------- | -------------------------------------------------------------------------------------- |
-| `packages/sdk/`       | [`@0gzk/sdk`](./packages/sdk) — isomorphic prover + Node-only 0G Storage helpers       |
-| `packages/cli/`       | [`@0gzk/cli`](./packages/cli) — the `0gzk` binary                                      |
-| `packages/contracts/` | Foundry project for the on-chain circuit registry + Groth16 verifiers (planned)        |
-| `circuits/`           | Source circuits (e.g. `age_verification`) and their `build.sh` scripts                 |
-| `web/`                | [Next.js 16 web prover](./web) — separate git repo, consumes `@0gzk/sdk` from npm      |
+| Path                  | What                                                                                                |
+| --------------------- | --------------------------------------------------------------------------------------------------- |
+| `packages/sdk/`       | [`@0gzk/sdk`](./packages/sdk) — isomorphic prover, Node 0G Storage helpers, on-chain registry client |
+| `packages/cli/`       | [`@0gzk/cli`](./packages/cli) — the `0gzk` binary, registry-aware                                   |
+| `packages/contracts/` | Foundry project for [`CircuitRegistry`](./packages/contracts/src/CircuitRegistry.sol) and verifiers |
+| `circuits/`           | Reference circuits (`age_verification`, `poseidon_preimage`, `merkle_membership`, …)                |
+| `web/`                | [Next.js 16 web prover](./web) — separate git repo, consumes `@0gzk/sdk` from npm                   |
 
 ## Develop from source
 
@@ -127,17 +181,29 @@ node packages/cli/dist/index.js prove \
 
 ## Network configuration
 
-The Node surface and the CLI default to 0G Galileo testnet (chain ID **16602**). Configure via env vars or per-command flags:
+The Node surface and the CLI default to **0G mainnet** (chain ID **16661**). Configure via env vars or per-command flags:
 
-| Variable          | Default                                           | Purpose                                      |
-| ----------------- | ------------------------------------------------- | -------------------------------------------- |
-| `OG_NETWORK`      | `testnet`                                         | `testnet` (Galileo) or `mainnet`             |
-| `OG_PRIVATE_KEY`  | —                                                 | Funded `0x...` key, required for `publish`   |
-| `OG_RPC_URL`      | `https://evmrpc-testnet.0g.ai`                    | EVM RPC override                             |
-| `OG_INDEXER_URL`  | `https://indexer-storage-testnet-turbo.0g.ai`     | 0G Storage indexer override                  |
-| `OGZK_CACHE_DIR`  | `~/.0gzk/bundles`                                 | Where `0gzk prove --root-hash` caches bundles |
+| Variable          | Default                                  | Purpose                                       |
+| ----------------- | ---------------------------------------- | --------------------------------------------- |
+| `OG_NETWORK`      | `mainnet`                                | `mainnet` or `testnet` (Galileo)              |
+| `OG_PRIVATE_KEY`  | —                                        | Funded `0x...` key, required for `publish`    |
+| `OG_RPC_URL`      | `https://evmrpc.0g.ai`                   | EVM RPC override                              |
+| `OG_INDEXER_URL`  | `https://indexer-storage-turbo.0g.ai`    | 0G Storage indexer override                   |
+| `OGZK_CACHE_DIR`  | `~/.0gzk/bundles`                        | Where `0gzk prove --root-hash` caches bundles |
 
-Get testnet 0G from the [official faucet](https://faucet.0g.ai). Downloads (`fetch`, remote `prove`) do not require a wallet.
+Downloads (`fetch`, remote `prove`) do not require a wallet.
+
+### Use Galileo testnet instead
+
+```bash
+export OG_NETWORK=testnet
+# Defaults flip to:
+#   RPC:     https://evmrpc-testnet.0g.ai
+#   Indexer: https://indexer-storage-testnet-turbo.0g.ai
+#   Chain:   16602 (Galileo)
+```
+
+Get testnet 0G from the [official faucet](https://faucet.0g.ai). The Galileo `CircuitRegistry` is at [`0x5b2c3e86c9255a4459199a6d9cb7b63e2a660ce6`](https://chainscan-galileo.0g.ai/address/0x5b2c3e86c9255a4459199a6d9cb7b63e2a660ce6).
 
 ## Roadmap
 
@@ -145,13 +211,16 @@ Get testnet 0G from the [official faucet](https://faucet.0g.ai). Downloads (`fet
 - [x] Reference circuit `age_verification` with one-shot reproducible `build.sh`
 - [x] 0G Storage round-trip: `0gzk publish` and `0gzk fetch` with on-chain receipt
 - [x] Prover engine: snarkjs Groth16 with metadata-driven input validation, bundle disk cache
-- [x] `@0gzk/sdk` and `@0gzk/cli` published to npm (v0.1.0)
-- [ ] Next.js web app: pick a circuit by root hash, prove in-browser, witness never leaves the tab
-- [ ] On-chain circuit registry (`CircuitRegistry.sol`) + thin client adapter
-- [ ] On-chain Groth16 verification helper in `@0gzk/sdk/onchain`
+- [x] `@0gzk/sdk` and `@0gzk/cli` published to npm (v0.1.x)
+- [x] Next.js web app: pick a circuit by root hash, prove in-browser, witness never leaves the tab
+- [x] On-chain circuit registry (`CircuitRegistry.sol`) + `@0gzk/sdk/onchain` client (v0.2)
+- [x] More reference circuits: `poseidon_preimage`, `merkle_membership`, `private_balance_threshold` (v0.2)
+- [x] Vitest test suite for `@0gzk/sdk`: unit + fixture integration + gated live e2e (v0.2)
+- [ ] On-chain Groth16 verification helper in `@0gzk/sdk/onchain` (after first verifier-attached deploy)
 - [ ] Marketplace UI surfacing community-published circuits
+- [ ] Distributed trusted-setup ceremonies via 0G Compute (v0.3)
 
-See [CHANGELOG.md](./CHANGELOG.md) for release notes.
+See [CHANGELOG.md](./CHANGELOG.md) and [TODO.md](./TODO.md) for release notes and the active backlog.
 
 ## Why 0G Storage
 
