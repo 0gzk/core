@@ -1,13 +1,16 @@
 {
   "name": "@0gzk/contracts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Foundry project for the 0gzk circuit registry and Groth16 verifiers (placeholder)",
+  "description": "Foundry project for the 0gzk circuit registry and Groth16 verifier interface",
   "scripts": {
-    "build": "echo \"[contracts] placeholder build (forge build wired up later)\"",
-    "dev": "echo \"[contracts] placeholder dev\"",
+    "build": "forge build",
+    "test": "forge test",
+    "fmt": "forge fmt",
+    "fmt:check": "forge fmt --check",
     "clean": "rimraf out cache broadcast",
-    "lint": "echo \"[contracts] no lint yet\""
+    "deploy:mainnet": "forge script script/Deploy.s.sol:Deploy --rpc-url mainnet --broadcast",
+    "deploy:galileo": "forge script script/Deploy.s.sol:Deploy --rpc-url galileo --broadcast"
   },
   "devDependencies": {
     "rimraf": "^6.0.1"
