@@ -12,18 +12,29 @@ Provides the `0gzk` binary.
 
 ## Configuration
 
-Uploads require a funded wallet on the chosen 0G network. Defaults target the Galileo testnet (chain ID 16602):
+Uploads require a funded wallet on the chosen 0G network. Defaults target **0G mainnet** (chain ID 16661):
 
 ```bash
 export OG_PRIVATE_KEY=0x...                 # required for `0gzk publish`
-export OG_NETWORK=testnet                   # or mainnet (default: testnet)
+export OG_NETWORK=mainnet                   # default; set to "testnet" for Galileo
 # Optional overrides:
-# export OG_RPC_URL=https://evmrpc-testnet.0g.ai
-# export OG_INDEXER_URL=https://indexer-storage-testnet-turbo.0g.ai
-# export OGZK_CACHE_DIR=$HOME/.0gzk/bundles  # bundle cache for `0gzk prove --root-hash`
+# export OG_RPC_URL=https://evmrpc.0g.ai
+# export OG_INDEXER_URL=https://indexer-storage-turbo.0g.ai
+# export OGZK_CACHE_DIR=$HOME/.0gzk/bundles # bundle cache for `0gzk prove --root-hash`
 ```
 
-Get testnet 0G from the [official faucet](https://faucet.0g.ai). Downloads do not require a key.
+Downloads do not require a key.
+
+### Galileo testnet
+
+```bash
+export OG_NETWORK=testnet
+# Defaults flip to:
+#   OG_RPC_URL=https://evmrpc-testnet.0g.ai
+#   OG_INDEXER_URL=https://indexer-storage-testnet-turbo.0g.ai
+```
+
+Get testnet 0G from the [official faucet](https://faucet.0g.ai).
 
 ## Commands
 
@@ -61,7 +72,7 @@ Useful flags:
 
 - `--out <dir>` — output dir (default `./proof-<timestamp>/`).
 - `--no-verify` — skip local verification.
-- `--network <testnet|mainnet>` — override the 0G network for `--root-hash`.
+- `--network <mainnet|testnet>` — override the 0G network for `--root-hash`.
 - `--indexer-url <url>` — override the indexer endpoint.
 
 The emitted `proof.json` and `public.json` are byte-compatible with the standalone `snarkjs` CLI, so any third party can verify them with `snarkjs groth16 verify`.
