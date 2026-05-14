@@ -1,6 +1,6 @@
 {
   "name": "@0gzk/cli",
-  "version": "0.1.1",
+  "version": "0.3.0",
   "description": "0gzk CLI: publish circuit bundles to 0G Storage, fetch them back, and prove locally",
   "type": "module",
   "bin": {
@@ -38,11 +38,12 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
     "clean": "rimraf dist *.tsbuildinfo",
-    "lint": "tsc -p tsconfig.json --noEmit"
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@0gfoundation/0g-ts-sdk": "^1.2.4",
-    "@0gzk/sdk": "workspace:^",
+    "@0gzk/sdk": "^0.3.0",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",
@@ -52,6 +53,7 @@
   },
   "devDependencies": {
     "rimraf": "^6.0.1",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.0"
   }
 }
