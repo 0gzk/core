@@ -38,7 +38,7 @@ function isNetwork(value: string | undefined): value is Network {
 export function loadConfig(overrides: Partial<StorageConfig> = {}): StorageConfig {
   const envNetwork = process.env.OG_NETWORK;
   const network: Network =
-    overrides.network ?? (isNetwork(envNetwork) ? envNetwork : "testnet");
+    overrides.network ?? (isNetwork(envNetwork) ? envNetwork : "mainnet");
   const preset = NETWORKS[network];
 
   return {
