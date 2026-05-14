@@ -1,6 +1,6 @@
 {
   "name": "@0gzk/sdk",
-  "version": "0.1.1",
+  "version": "0.3.1",
   "description": "0gzk SDK: ZK Groth16 prover and 0G Storage helpers (isomorphic + Node)",
   "type": "module",
   "main": "./dist/index.js",
@@ -13,6 +13,14 @@
     "./node": {
       "types": "./dist/node/index.d.ts",
       "import": "./dist/node/index.js"
+    },
+    "./onchain": {
+      "types": "./dist/onchain/index.d.ts",
+      "import": "./dist/onchain/index.js"
+    },
+    "./build": {
+      "types": "./dist/build/index.d.ts",
+      "import": "./dist/build/index.js"
     },
     "./prover": {
       "types": "./dist/prover.d.ts",
@@ -58,7 +66,10 @@
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
     "clean": "rimraf dist *.tsbuildinfo",
-    "lint": "tsc -p tsconfig.json --noEmit"
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --exclude \"tests/e2e/**\"",
+    "test:watch": "vitest",
+    "test:e2e": "vitest run tests/e2e/live.test.ts"
   },
   "peerDependencies": {
     "snarkjs": "^0.7.5",
@@ -82,6 +93,7 @@
     "ethers": "^6.13.0",
     "rimraf": "^6.0.1",
     "snarkjs": "^0.7.5",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.0"
   }
 }
