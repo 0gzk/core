@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { config as loadEnv } from "dotenv";
 import { Command } from "commander";
 import chalk from "chalk";
 
@@ -17,8 +16,21 @@ import {
   runRegistryRegister,
   runRegistryResolve,
 } from "./commands/registry.js";
+import {
+  runConfigGet,
+  runConfigPath,
+  runConfigSet,
+  runConfigUnset,
+  runSetKey,
+} from "./commands/config.js";
+import { applyGlobalConfigToEnv, loadGlobalConfig } from "./config-store.js";
 
-loadEnv();
+// Pull persistent settings from ~/.0gzk/config.json into process.env so the
+// rest of the CLI (and the SDK underneath) reads them through the existing
+// OG_* env path. Shell env vars set before the CLI ran are NOT overwritten,
+// preserving the priority order: CLI flag > shell env > config file > preset.
+const globalConfig = await loadGlobalConfig();
+applyGlobalConfigToEnv(globalConfig);
 
 // Read the version from our own package.json so `0gzk --version` can never
 // drift from the published manifest.
@@ -28,6 +40,14 @@ const pkg = JSON.parse(
     "utf8",
   ),
 ) as { version: string };
+
+// Short-circuit `--version` / `-V` before commander touches it. Commander 12 +
+// `parseAsync` has a quirk where the version flag handler hangs the event loop
+// instead of exiting, so we handle it manually.
+if (process.argv.includes("--version") || process.argv.includes("-V")) {
+  process.stdout.write(`${pkg.version}\n`);
+  process.exit(0);
+}
 
 const program = new Command();
 
@@ -198,6 +218,65 @@ registry
       registry: opts.registry,
       outputDir,
     });
+  });
+
+program
+  .command("key")
+  .description(
+    "Shortcut for `0gzk config set privateKey <hex>`. Stores the signing key " +
+      "in ~/.0gzk/config.json (mode 0600).",
+  )
+  .argument("<hex>", "0x-prefixed 32-byte private key")
+  .action(async (hex: string) => {
+    await runSetKey(hex);
+  });
+
+const config = program
+  .command("config")
+  .description(
+    "Read and write persistent CLI settings stored in ~/.0gzk/config.json " +
+      "(privateKey, network, rpcUrl, indexerUrl, registry).",
+  );
+
+config
+  .command("set")
+  .description("Set a config value, e.g. `0gzk config set privateKey 0x...`.")
+  .argument("<key>", "One of: privateKey, network, rpcUrl, indexerUrl, registry")
+  .argument("<value>", "Value to store. Validated before write.")
+  .action(async (key: string, value: string) => {
+    await runConfigSet(key, value);
+  });
+
+config
+  .command("get")
+  .description("Print one config value, or all values if <key> is omitted.")
+  .argument("[key]", "Optional config key to read")
+  .option("--show", "Reveal the private key instead of masking it")
+  .action(async (key: string | undefined, opts: { show?: boolean }) => {
+    await runConfigGet(key, { reveal: Boolean(opts.show) });
+  });
+
+config
+  .command("list")
+  .description("Alias for `config get` with no key. Shows every value and its source.")
+  .option("--show", "Reveal the private key instead of masking it")
+  .action(async (opts: { show?: boolean }) => {
+    await runConfigGet(undefined, { reveal: Boolean(opts.show) });
+  });
+
+config
+  .command("unset")
+  .description("Remove a key from ~/.0gzk/config.json.")
+  .argument("<key>", "Config key to remove")
+  .action(async (key: string) => {
+    await runConfigUnset(key);
+  });
+
+config
+  .command("path")
+  .description("Print the absolute path to the config file. Honors $OGZK_CONFIG_DIR.")
+  .action(async () => {
+    await runConfigPath();
   });
 
 program

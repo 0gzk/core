@@ -33,4 +33,30 @@ declare module "snarkjs" {
       logger?: unknown,
     ): Promise<boolean>;
   };
+
+  /**
+   * snarkjs trusted-setup helpers. All four take filesystem paths (not
+   * buffers) — that's how the snarkjs CLI uses them under the hood.
+   */
+  export const zKey: {
+    newZKey(
+      r1csName: string,
+      ptauName: string,
+      zkeyName: string,
+      logger?: unknown,
+    ): Promise<unknown>;
+    contribute(
+      zkeyNameOld: string,
+      zkeyNameNew: string,
+      name: string,
+      entropy: string,
+      logger?: unknown,
+    ): Promise<unknown>;
+    exportVerificationKey(zkeyName: string, logger?: unknown): Promise<unknown>;
+    exportSolidityVerifier(
+      zkeyName: string,
+      templates: { groth16?: string; plonk?: string; fflonk?: string },
+      logger?: unknown,
+    ): Promise<string>;
+  };
 }

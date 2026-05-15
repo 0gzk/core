@@ -83,7 +83,12 @@ Browser, Next.js App Router, registry-driven proving, and CI recipes are all in 
 ## Use the CLI
 
 ```bash
-# Publish a circuit bundle to 0G Storage (needs OG_PRIVATE_KEY funded on 0G mainnet)
+# One-time setup: store a funded mainnet key in ~/.0gzk/config.json (mode 0600).
+# The CLI does not read .env files; everything lives in the global config store.
+0gzk key 0x...                   # shortcut for `0gzk config set privateKey 0x...`
+0gzk config get                  # show current values + their source
+
+# Publish a circuit bundle to 0G Storage
 0gzk publish ./circuit_bundle
 
 # Publish AND register on-chain in one step
@@ -181,22 +186,25 @@ node packages/cli/dist/index.js prove \
 
 ## Network configuration
 
-The Node surface and the CLI default to **0G mainnet** (chain ID **16661**). Configure via env vars or per-command flags:
+The Node surface and the CLI default to **0G mainnet** (chain ID **16661**).
 
-| Variable          | Default                                  | Purpose                                       |
-| ----------------- | ---------------------------------------- | --------------------------------------------- |
-| `OG_NETWORK`      | `mainnet`                                | `mainnet` or `testnet` (Galileo)              |
-| `OG_PRIVATE_KEY`  | —                                        | Funded `0x...` key, required for `publish`    |
-| `OG_RPC_URL`      | `https://evmrpc.0g.ai`                   | EVM RPC override                              |
-| `OG_INDEXER_URL`  | `https://indexer-storage-turbo.0g.ai`    | 0G Storage indexer override                   |
-| `OGZK_CACHE_DIR`  | `~/.0gzk/bundles`                        | Where `0gzk prove --root-hash` caches bundles |
+For the **CLI**, persist values once with `0gzk config set <key> <value>` (writes `~/.0gzk/config.json` with mode `0600`). The CLI does **not** read `.env` files. For programmatic use of `@0gzk/sdk` from a Node app, the same values are read from environment variables.
 
-Downloads (`fetch`, remote `prove`) do not require a wallet.
+| `0gzk config` key | Env var                  | Default                                  | Purpose                                       |
+| ----------------- | ------------------------ | ---------------------------------------- | --------------------------------------------- |
+| `network`         | `OG_NETWORK`             | `mainnet`                                | `mainnet` or `testnet` (Galileo)              |
+| `privateKey`      | `OG_PRIVATE_KEY`         | —                                        | Funded `0x...` key, required for `publish`    |
+| `rpcUrl`          | `OG_RPC_URL`             | `https://evmrpc.0g.ai`                   | EVM RPC override                              |
+| `indexerUrl`      | `OG_INDEXER_URL`         | `https://indexer-storage-turbo.0g.ai`    | 0G Storage indexer override                   |
+| `registry`        | `OGZK_REGISTRY_ADDRESS`  | baked-in mainnet address                 | `CircuitRegistry` address override            |
+| —                 | `OGZK_CACHE_DIR`         | `~/.0gzk/bundles`                        | Where `0gzk prove --root-hash` caches bundles |
+
+Resolution priority for the CLI: CLI flag > shell env > `~/.0gzk/config.json` > built-in network preset. Downloads (`fetch`, remote `prove`) do not require a wallet.
 
 ### Use Galileo testnet instead
 
 ```bash
-export OG_NETWORK=testnet
+0gzk config set network testnet
 # Defaults flip to:
 #   RPC:     https://evmrpc-testnet.0g.ai
 #   Indexer: https://indexer-storage-testnet-turbo.0g.ai

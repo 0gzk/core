@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file. The format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased — v0.3.3 (CLI only)
+
+### Added
+
+- **`0gzk config` subcommand** with persistent settings stored in `~/.0gzk/config.json` (mode `0600`, atomic write). Subcommands: `set`, `get [--show]`, `list`, `unset`, `path`. Allowed keys: `privateKey`, `network`, `rpcUrl`, `indexerUrl`, `registry`. Values are validated before being written (private key must be 32 bytes hex, registry must be 20 bytes hex, URLs must be http(s), network must be `testnet` or `mainnet`). The private key is masked in `config get` (e.g. `0xCe9f…64d`); pass `--show` to reveal. New env var `OGZK_CONFIG_DIR` overrides the config directory (default `~/.0gzk`).
+- **`0gzk key <hex>`** top-level shortcut, equivalent to `0gzk config set privateKey <hex>`. Same validation, same masked output.
+- New helpers in [`packages/cli/src/config-store.ts`](./packages/cli/src/config-store.ts) (`loadGlobalConfig`, `saveGlobalConfig`, `applyGlobalConfigToEnv`, `envWasSetByShell`, `validateConfigValue`, `maskPrivateKey`).
+
+### Changed
+
+- **CLI no longer reads `.env` files.** [`packages/cli/src/index.ts`](./packages/cli/src/index.ts) drops its `dotenv` import and instead loads `~/.0gzk/config.json` at startup, injecting each present key into `process.env` (via `applyGlobalConfigToEnv`) only if the matching env var is not already set. The SDK still reads `process.env`, so the change is transparent to it. The `dotenv` dependency is removed from [`packages/cli/package.json`](./packages/cli/package.json).
+- Resolution priority for the CLI is now explicit: **CLI flag > shell env > `~/.0gzk/config.json` > built-in network preset.** Documented in [`docs/content/cli.mdx`](./docs/content/cli.mdx) and the package READMEs.
+- `0gzk --version` and `-V` are short-circuited before commander parses argv. Commander 12 + `parseAsync` has a quirk where its built-in version handler hangs the event loop; the manual short-circuit avoids it.
+- `@0gzk/cli` bumped to `0.3.3`. SDK is unchanged at `0.3.2`.
+
+### Notes
+
+- Programmatic SDK consumers (Node apps, Next.js API routes, the `examples/` projects, the `web/` app) still load `OG_*` env vars normally — `.env` is only dropped from the CLI binary itself. The repo-level [`.env.example`](./.env.example) is updated to make this distinction explicit.
+
+---
+
+## Unreleased — v0.3.2
+
+### Fixed
+
+- **`0gzk publish` now correctly emits the bundle's content-addressed `rootHash` before the upload tx is submitted.** The `0.3.1` tarball published to npm shipped without this fix even though the source was patched, so users would still see `Upload did not start within 5m (no rootHash yet)` whenever the 0G Storage RPC was slow. `packages/sdk/src/node/storage.ts` now captures `tree.rootHash()` from the local Merkle computation immediately after `ZgFile.fromFilePath` and threads it into the `submitting` progress event and `tracker.rootHash`, so `UploadTimeoutError.rootHash` is always populated and `0gzk publish --register` can fall through to on-chain registration in a single command.
+- `@0gzk/sdk` and `@0gzk/cli` bumped to `0.3.2`. `@0gzk/cli` now depends on `@0gzk/sdk@^0.3.2`.
+
 ## Unreleased — v0.3.0
 
 **BREAKING:** Default network is now `mainnet` (chain id 16661). Programmatic callers that relied on the implicit Galileo default must now pass `network: "testnet"` (SDK), `--network testnet` (CLI), or set `OG_NETWORK=testnet`. Galileo testnet remains fully supported.

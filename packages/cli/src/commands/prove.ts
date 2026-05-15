@@ -11,9 +11,14 @@ import {
 import chalk from "chalk";
 import ora from "ora";
 
+import { connectRegistry, fetchBundleByName, parseNameSpec } from "../registry.js";
+
 export interface ProveOptions {
   bundle?: string;
   rootHash?: string;
+  name?: string;
+  registry?: string;
+  rpcUrl?: string;
   out?: string;
   network?: "testnet" | "mainnet";
   indexerUrl?: string;
@@ -56,11 +61,12 @@ async function loadInputJson(inputPath: string): Promise<Record<string, unknown>
 async function resolveBundle(
   options: ProveOptions,
 ): Promise<{ bundle: BundleFiles; source: string; cacheDir?: string }> {
-  if (options.bundle && options.rootHash) {
-    throw new Error("Use either --bundle or --root-hash, not both.");
+  const sources = [options.bundle, options.rootHash, options.name].filter(Boolean).length;
+  if (sources > 1) {
+    throw new Error("Use exactly one of --bundle, --root-hash, or --name.");
   }
-  if (!options.bundle && !options.rootHash) {
-    throw new Error("Pass either --bundle <dir> or --root-hash <0x...>.");
+  if (sources === 0) {
+    throw new Error("Pass one of --bundle <dir>, --root-hash <0x...>, or --name <name>@<version>.");
   }
 
   if (options.bundle) {
@@ -70,6 +76,30 @@ async function resolveBundle(
     }
     const bundle = await readBundleFromDir(dir);
     return { bundle, source: dir };
+  }
+
+  if (options.name) {
+    const cacheRoot = defaultCacheDir();
+    const handle = connectRegistry({
+      network: options.network,
+      rpcUrl: options.rpcUrl,
+      registryAddress: options.registry,
+    });
+    const spinner = ora(`Resolving ${options.name} via registry`).start();
+    try {
+      const result = await fetchBundleByName(handle, parseNameSpec(options.name), cacheRoot);
+      spinner.succeed(
+        `Resolved ${options.name} -> ${result.rootHash.slice(0, 10)}… (v${result.version})`,
+      );
+      return {
+        bundle: result.bundle,
+        source: `registry:${options.name}@${result.version}`,
+        cacheDir: path.join(cacheRoot, result.rootHash.toLowerCase()),
+      };
+    } catch (err) {
+      spinner.fail("Registry resolve failed");
+      throw err;
+    }
   }
 
   const rootHash = options.rootHash!;

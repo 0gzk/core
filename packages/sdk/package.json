@@ -1,6 +1,6 @@
 {
   "name": "@0gzk/sdk",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "0gzk SDK: ZK Groth16 prover and 0G Storage helpers (isomorphic + Node)",
   "type": "module",
   "main": "./dist/index.js",
